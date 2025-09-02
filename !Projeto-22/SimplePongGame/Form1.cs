@@ -1,37 +1,37 @@
-using Microsoft.VisualBasic.Devices;
-using System.Numerics;
-using static System.Formats.Asn1.AsnWriter;
+using System.Drawing;
+using System.Windows.Forms;
 
 namespace SimplePongGame
 {
     public partial class Form1 : Form
     {
-     
-        Random rand = new Random();
+        private Game game;
+        private bool isUpPressed, isDownPressed;
+        private bool isWPressed, isSPressed;
 
-        int playerSpeed = 8;
-
-        bool goup, godown;
-        int speed = 5;
-        int ballx = 5;
-        int bally = 5;
-        int score = 0;
-        int cpuPoint = 0;
-
-        public Form1()
+        public Form1(GameMode mode, Difficulty difficulty = Difficulty.EASY)
         {
             InitializeComponent();
+            game = new Game(mode, difficulty);
         }
 
         private void KeyIsDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Up)
             {
-                goup = true;
+                isUpPressed = true;
             }
             if (e.KeyCode == Keys.Down)
             {
-                godown = true;
+                isDownPressed = true;
+            }
+            if (e.KeyCode == Keys.W)
+            {
+                isWPressed = true;
+            }
+            if (e.KeyCode == Keys.S)
+            {
+                isSPressed = true;
             }
         }
 
@@ -39,82 +39,42 @@ namespace SimplePongGame
         {
             if (e.KeyCode == Keys.Up)
             {
-                goup = false;
+                isUpPressed = false;
             }
             if (e.KeyCode == Keys.Down)
             {
-                godown = false;
+                isDownPressed = false;
+            }
+            if (e.KeyCode == Keys.W)
+            {
+                isWPressed = false;
+            }
+            if (e.KeyCode == Keys.S)
+            {
+                isSPressed = false;
             }
         }
 
-        private void timer1_Tick(object sender, EventArgs e)
+        private void timer1_Tick(object sender, System.EventArgs e)
         {
-            playerScore.Text = "" + score; 
-            cpuLabel.Text = "" + cpuPoint;
-            ball.Top -= bally;
-            ball.Left -= ballx; 
-            cpu.Top += speed; 
+            // O Form1 agora envia o estado das teclas de ambos os jogadores
+            game.UpdatePlayer(isUpPressed, isDownPressed, isWPressed, isSPressed);
 
-            if (score < 5)
-            {
-                if (cpu.Top < 0 || cpu.Top > 455)
-                {
-                    speed = -speed;
-                }
-            }
-            else
-            {
-                cpu.Top = ball.Top + 30;
-            }
-            if (ball.Left < 0)
-            {
+            game.Update();
 
-                ball.Left = 434; 
-                ballx = -ballx; 
-                ballx -= 2; 
-                cpuPoint++; 
-            }
-   
-            if (ball.Left + ball.Width > ClientSize.Width)
-            {
-                // then
-                ball.Left = 434;  
-                ballx = -ballx; 
-                ballx += 2; 
-                score++; 
-            }
+            player.Location = new Point(player.Location.X, game.GetPlayer1Position().Y);
+            cpu.Location = new Point(cpu.Location.X, game.GetPlayer2Position().Y);
+            ball.Location = game.GetBallPosition();
 
+            playerScore.Text = game.GetPlayer1Score().ToString();
+            cpuLabel.Text = game.GetPlayer2Score().ToString();
 
-            if (ball.Top < 0 || ball.Top + ball.Height > ClientSize.Height)
-            {
-                bally = -bally;
-            }
-
-            if (ball.Bounds.IntersectsWith(player.Bounds) || ball.Bounds.IntersectsWith(cpu.Bounds))
-            {
-                ballx = -ballx;
-            }
-
-            if (goup == true && player.Top > 0)
-            {
-                player.Top -= 8;
-            }
-
-            if (godown == true && player.Top < 455)
-            {
-                player.Top += 8;
-            }
-            if (score > 10)
+            if (game.IsGameOver())
             {
                 gameTimer.Stop();
-                MessageBox.Show("Você ganhou, parabéns!");
+                string winner = game.GetWinner();
+                MessageBox.Show(winner + " venceu o jogo!");
             }
-            if (cpuPoint > 10)
-            {
-                gameTimer.Stop();
-                MessageBox.Show("Você perdeu, treine mais");
-            }
-        }
-
         }
     }
+}
